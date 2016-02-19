@@ -46,17 +46,18 @@ void VisionComm::updateInfo(const SSL_DetectionRobot& robot, int detectedTeamCol
         float rotationReading = robot.orientation();
 
 
-    #if SIDE == SIDE_POSITIVE
+#if SIDE == SIDE_POSITIVE
         positionReading *= -1;
         if(rotationReading > 0) {
             rotationReading = -(M_PI - rotationReading);
         } else {
             rotationReading = -(-M_PI - rotationReading);
         }
-    #endif
+#endif
 
-       std::cout<<"Robot 1 Position X ="<<robot.x()<< std::endl;
-      }
+        //TODO: publish this x,y as a Pose msg in ROS - http://docs.ros.org/hydro/api/geometry_msgs/html/msg/Pose.html
+        std::cout<<"Robot 1 Position X ="<<robot.x()<< std::endl;
+    }
 }
 
 
@@ -165,14 +166,14 @@ void VisionComm::recieveRobotTeam(const SSL_DetectionFrame& frame, int whichTeam
 {
     //for(const SSL_DetectionRobot& robot : frame.robots_blue().iterator)//*currentTeamDection changed to robot_blue AE
     for(google::protobuf::RepeatedPtrField<SSL_DetectionRobot>::const_iterator it= frame.robots_blue().begin(); it != frame.robots_blue().end(); it++)
-   {
-//        if(isGoodDetection(robot, frame, CONF_THRESHOLD_BOTS, fourCameraMode)) {
-            int robotID = (*it).robot_id();//robot.robot_id changed from ()->robot_blue.robotID AE
-            if(robotID == 1) {
-                updateInfo(*it, whichTeam);
-            }
+    {
+        //        if(isGoodDetection(robot, frame, CONF_THRESHOLD_BOTS, fourCameraMode)) {
+        int robotID = (*it).robot_id();//robot.robot_id changed from ()->robot_blue.robotID AE
+        if(robotID == 1) {
+            updateInfo(*it, whichTeam);
+        }
 
-//        }
+        //        }
     }
 }
 
@@ -211,7 +212,7 @@ bool VisionComm::receive()
     if(++resetFrames > 50) {
         resetFrames = 0;
         //for(int& reading : blue_rob_readings) reading = 0;
-       // for(int& reading : yell_rob_readings) reading = 0;
+        // for(int& reading : yell_rob_readings) reading = 0;
     }
 
     return true;
