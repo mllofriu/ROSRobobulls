@@ -1,7 +1,6 @@
 #ifndef VISIONCOMM_H
 #define VISIONCOMM_H
 #include <string>
-#include <QtCore/QThread>
 #include "include/netraw.h"
 #include "include/messages_robocup_ssl_detection.pb.h"
 #include "include/messages_robocup_ssl_geometry.pb.h"
@@ -22,7 +21,7 @@ const float CONF_THRESHOLD_BOTS = 0.8;
  * @details Detects the robots and ball and puts each robot in the corresponding team
  * based on robot's color (Blue team/ Yellow team)
  */
-class VisionComm: public QThread
+class VisionComm
 {
 public:
     VisionComm();

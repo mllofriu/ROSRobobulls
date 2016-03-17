@@ -1,19 +1,19 @@
 #include "ros/ros.h"
-#include "std_msg/String.h"
 #include "visioncomm.h"
-#include <QApplication>
 #include <sstream>
 
 
 int main(int argc, char *argv[])
 {
+    ros::init(argc, argv, "position");
+
    VisionComm visionCommunicator;
 
-     QApplication a(argc, argv);
-     //GuiInterface::getGuiInterface()->show();
 
-     /*ros::init(argc, argv, "main");
-     ros::NodeHandle n;
+   //GuiInterface::getGuiInterface()->show();
+
+     /*ros::init(argc, argv, "position");
+
      ros::Publisher chatter_pub = n.advertise<std_msgs::String>("chatter", 1000);
      ros::Rate loop_rate(10);
 
@@ -31,7 +31,9 @@ int main(int argc, char *argv[])
          ++count;
      }*/
 
-    visionCommunicator.start();
+   visionCommunicator.run();
+
+
 
     return 0;
 }

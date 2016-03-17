@@ -1,6 +1,6 @@
 #include <iostream>
 #include <sstream>
-#include "point.h"
+#include "utilities/point.h"
 
 bool Point::operator==(const Point& rhs)
 {

@@ -1,6 +1,6 @@
 #ifndef COMMUNICATION_H
 #define COMMUNICATION_H
-#include "config/simulated.h"
+#include "include/config/simulated.h"
 
 /*! @file
  * @brief Address and port configurations for the communication modules
