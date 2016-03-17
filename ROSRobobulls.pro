@@ -25,7 +25,8 @@ SOURCES += main.cpp \
     include/messages_robocup_ssl_wrapper.pb.cc \
     include/netraw.cpp \
     include/robocup_ssl_client.cpp \
-    utilities/point.cpp
+    utilities/point.cpp \
+    talker.cpp
 
 HEADERS += \
     visioncomm.h \

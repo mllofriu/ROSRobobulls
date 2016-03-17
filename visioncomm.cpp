@@ -1,11 +1,14 @@
 #include <cmath>
 #include <sys/time.h>
-#include "include/config/simulated.h"
-#include "include/config/communication.h"
+#include "config/simulated.h"
+#include "config/communication.h"
 #include "visioncomm.h"
 #include <iostream>
 #include "utilities/point.h"
-#include "include/config/team.h"
+#include "config/team.h"
+#include "ros/ros.h"
+#include "std_msg/String.h"
+#include <sstream>
 using namespace std;
 
 VisionComm::VisionComm()
