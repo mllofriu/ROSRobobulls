@@ -6,6 +6,7 @@
 #include "messages_robocup_ssl_geometry.pb.h"
 #include "messages_robocup_ssl_wrapper.pb.h"
 #include "robocup_ssl_client.h"
+#include "ros/ros.h"
 //#include "model/gamemodel.h"
 //#include "model/robot.h"
 
@@ -24,7 +25,7 @@ const float CONF_THRESHOLD_BOTS = 0.8;
 class VisionComm
 {
 public:
-    VisionComm();
+    VisionComm(ros::Publisher *);
     ~VisionComm();
 
     //! @brief Recieves an SSL_WrapperPacket and fills in the GameModel information
@@ -58,6 +59,7 @@ protected:
     int yell_rob_readings[10]={0};  //! Number of detections of each yelloe robot
     timeval lastRecvTime;           //! When did we last receive a packet? Used to not recieve every one
     bool fourCameraMode = false;    //! Are we in four-camera mode (true)? Or Two-camera mode?
+    ros::Publisher * pub_;
 };
 
 #endif // VISIONCOMM_H

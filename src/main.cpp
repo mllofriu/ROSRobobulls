@@ -1,39 +1,20 @@
 #include "ros/ros.h"
 #include "visioncomm.h"
-#include <sstream>
 
+#include "geometry_msgs/PoseStamped.h"
 
-int main(int argc, char *argv[])
-{
-    ros::init(argc, argv, "position");
+int main(int argc, char *argv[]) {
+	ros::init(argc, argv, "position");
+	ros::NodeHandle n;
 
-   VisionComm visionCommunicator;
+	int robot;
+	n.param("robot", robot, 1);
 
+	ros::Publisher pub = n.advertise<geometry_msgs::PoseStamped>("position",2);
 
-   //GuiInterface::getGuiInterface()->show();
+	VisionComm visionCommunicator(&pub);
 
-     /*ros::init(argc, argv, "position");
+	visionCommunicator.run();
 
-     ros::Publisher chatter_pub = n.advertise<std_msgs::String>("chatter", 1000);
-     ros::Rate loop_rate(10);
-
-     int count = 0;
-     while (ros::ok())
-     {
-         std_msgs::String msg;
-         std::stringstream ss;
-         ss << "Robot 1 Position X ="<<robot.x()<< std::endl<< count;
-         msg.data = ss.str();
-         ROS_INFO("%s", msg.data.c_str());
-         chatter_pub.publish(msg);
-         ros::spinOnce();
-         loop_rate.sleep();
-         ++count;
-     }*/
-
-   visionCommunicator.run();
-
-
-
-    return 0;
+	return 0;
 }
