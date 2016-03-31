@@ -7,16 +7,19 @@
 #include "utilities/point.h"
 #include "config/team.h"
 #include "ros/ros.h"
+#include "geometry_msgs/Pose.h"
 //#include "std_msg/String.h"
 #include <sstream>
 
 using namespace std;
 
-VisionComm::VisionComm()
+VisionComm::VisionComm(ros::Publisher pub)
 {
+
     client = new RoboCupSSLClient(VISION_PORT, VISION_ADDRESS);
     client->open(true);
     fourCameraMode = isFourCameraMode();
+    positionpub = pub;
 }
 
 VisionComm::~VisionComm(void)
@@ -47,6 +50,7 @@ void VisionComm::updateInfo(const SSL_DetectionRobot& robot, int detectedTeamCol
         float rotationReading = robot.orientation();
 
 
+
 #if SIDE == SIDE_POSITIVE
         positionReading *= -1;
         if(rotationReading > 0) {
@@ -57,21 +61,24 @@ void VisionComm::updateInfo(const SSL_DetectionRobot& robot, int detectedTeamCol
 #endif
 
         //TODO: publish this x,y as a Pose msg in ROS - http://docs.ros.org/hydro/api/geometry_msgs/html/msg/Pose.html
-            ros::NodeHandle n;
 
-            ros::Publisher chatter_pub = n.advertise<geometry_msgs::Pose>("chatter", 1000);
+
+
             geometry_msgs::Pose msg;
 
-            std::stringstream ss;
-            ss << "Robot 1 Position X ="<<robot.x()<< std::endl;
-            msg.data = ss.str();
-            ROS_INFO("%s", msg.data.c_str());
-            chatter_pub.publish(msg);
+
+            geometry_msgs::Point p;
+            p.x = robot.x();
+            p.y = robot.y();
+            msg.position = p;
+
+            //ROS_INFO("%s", msg);
+            positionpub.publish(msg);
             //ros::spinOnce();
             //loop_rate.sleep();
             //++count;
 
-        //std::cout<<"Robot 1 Position X ="<<robot.x()<< std::endl;
+       // std::cout<<"Robot 1 PositionositionReading(robot.x(),robot.y X ="<<robot.x()<< std::endl;
        // std::cout<<"Robot 1 Position Y ="<<robot.y()<< std::endl;
     }
 }
@@ -98,7 +105,7 @@ static bool isGoodDetection
         (x >= 0 && y >= 0 && cam == 0) ||
         (x  < 0 && y >= 0 && cam == 1) ||
         (x  < 0 && y  < 0 && cam == 2) ||
-        (x >= 0 && y  < 0 && cam == 3);
+        (x >= 0 && y  < 0 && cap(robot.x(),robot.y())m == 3);
     }
     isGoodSide |= SIMULATED;    //Simulated overrides anything
 
