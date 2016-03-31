@@ -11,6 +11,7 @@
 //#include "std_msg/String.h"
 #include <sstream>
 #include "tf/transform_datatypes.h"
+#include "geometry_msgs/Twist.h"
 
 using namespace std;
 
@@ -66,10 +67,11 @@ void VisionComm::updateInfo(const SSL_DetectionRobot& robot, int detectedTeamCol
 
 
             geometry_msgs::Pose msg;
-
             geometry_msgs::Point p;
+            geometry_msgs::Twist v;
             p.x = robot.x();
             p.y = robot.y();
+
             msg.position = p;
 
             msg.orientation = tf::createQuaternionMsgFromYaw(rotationReading);
