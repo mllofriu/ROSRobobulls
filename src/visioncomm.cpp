@@ -246,7 +246,7 @@ bool VisionComm::receive()
 
 void VisionComm::run()
 {
-    while(true){
+    while(ros::ok()){
         receive();
     }
 }
