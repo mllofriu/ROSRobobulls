@@ -109,6 +109,10 @@ void chatterCallback(const geometry_msgs::Twist cmd_vel)
     char buf[packet.ByteSize()];
     packet.SerializeToArray(buf, packet.ByteSize());
 
+    if(sendto(sock, buf, packet.ByteSize(), 0, (struct sockaddr *)&myaddr, sizeof(myaddr))!=packet.ByteSize()) {
+          perror("Mismatch in number of bytes sent");
+          exit(EXIT_FAILURE);
+       }
     /*QByteArray dgram;
     dgram.resize(packet.ByteSize());
     packet.SerializeToArray(dgram.data(), dgram.size());
