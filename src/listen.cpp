@@ -44,6 +44,10 @@
 #include <netdb.h>
 #include <iomanip>
 #include <string>
+#include "visioncomm.h"
+//#include"omni4_velcalculator.h"
+
+using std::abs;
 
 /**
  * This tutorial demonstrates simple receipt of messages over the ROS system.
@@ -53,7 +57,69 @@ void chatterCallback(const geometry_msgs::Twist cmd_vel)
 {
     ROS_INFO("Received values: [%f, %f, %f]", cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z);
 
+    double LF_offset = 144*M_PI/180; //135 Robot's x-Axis (right side) is zero
+    double LB_offset = 224*M_PI/180; //225
+    double RF_offset =  36*M_PI/180; //45
+    double RB_offset = 316*M_PI/180; //315
+
+
+#if SIMULATED
+    double trans_offset = 0;
+#else
+    double trans_offset = 0.0149;
+#endif
+    const double wheel_radius = 27;
+    double theta_vel = cmd_vel.angular.z/*theta_prop_mult * angle_error + theta_int_mult  * angle_error_integral*/;
     // Compute LF RF LB RB
+    double y_vel_robot = cmd_vel.linear.x/*cos(theta_current)*x_vel+sin(theta_current)*y_vel*/;
+    double x_vel_robot = cmd_vel.linear.y/*sin(theta_current)*x_vel-cos(theta_current)*y_vel*/;
+    double vel_robot = sqrt(x_vel_robot*x_vel_robot + y_vel_robot * y_vel_robot);
+
+    double RF =  (-sin(RF_offset) * x_vel_robot + cos(RF_offset)*y_vel_robot - trans_offset*vel_robot*cos(RF_offset) + wheel_radius*theta_vel);
+    double LF = -(-sin(LF_offset) * x_vel_robot + cos(LF_offset)*y_vel_robot - trans_offset*vel_robot*cos(LF_offset) + wheel_radius*theta_vel);
+    double LB = -(-sin(LB_offset) * x_vel_robot + cos(LB_offset)*y_vel_robot - trans_offset*vel_robot*cos(LB_offset) + wheel_radius*theta_vel);
+    double RB =  (-sin(RB_offset) * x_vel_robot + cos(RB_offset)*y_vel_robot - trans_offset*vel_robot*cos(RB_offset) + wheel_radius*theta_vel);
+
+    unsigned int max_mtr_spd = 100;
+    if (abs(LF)>max_mtr_spd)
+    {
+        LB=(max_mtr_spd/abs(LF))*LB;
+        RF=(max_mtr_spd/abs(LF))*RF;
+        RB=(max_mtr_spd/abs(LF))*RB;
+        LF=(max_mtr_spd/abs(LF))*LF;
+    }
+    if (abs(LB)>max_mtr_spd)
+    {
+        LF=(max_mtr_spd/abs(LB))*LF;
+        RF=(max_mtr_spd/abs(LB))*RF;
+        RB=(max_mtr_spd/abs(LB))*RB;
+        LB=(max_mtr_spd/abs(LB))*LB;
+    }
+    if (abs(RF)>max_mtr_spd)
+    {
+        LF=(max_mtr_spd/abs(RF))*LF;
+        LB=(max_mtr_spd/abs(RF))*LB;
+        RB=(max_mtr_spd/abs(RF))*RB;
+        RF=(max_mtr_spd/abs(RF))*RF;
+    }
+    if (abs(RB)>max_mtr_spd)
+    {
+        LF=(max_mtr_spd/abs(RB))*LF;
+        LB=(max_mtr_spd/abs(RB))*LB;
+        RF=(max_mtr_spd/abs(RB))*RF;
+        RB=(max_mtr_spd/abs(RB))*RB;
+    }
+
+    //Create and return result container
+   /* fourWheelVels vels;
+    vels.LB = LB;
+    vels.LF = LF;
+    vels.RB = RB;
+    vels.RF = RF;
+
+    return vels;*/
+
+
 
     // Send Message
     grSim_Packet packet;
@@ -62,16 +128,16 @@ void chatterCallback(const geometry_msgs::Twist cmd_vel)
     grSim_Robot_Command* command = packet.mutable_commands()->add_robot_commands();
 
     //Retrive robot information
-    int id = 1;
-    int LF = 100;
-    int RF = 100;
-    int LB = 100;
-    int RB = 100;
+   /* int id = 1;
+    LF = robot->getLF();
+    RF = robot->getRF();
+    LB = robot->getLB();
+    RB = robot->getRB();
     float kick = 0;
-    bool  dribble = false;
+    bool  dribble = false;*/
 
     // Fill in simulator packet
-    command->set_id(id);
+    command->set_id(1);
     command->set_wheelsspeed(true);
     command->set_wheel1(-LF);    //Left Forward
     command->set_wheel2(-LB);    //Left Backward
@@ -80,9 +146,9 @@ void chatterCallback(const geometry_msgs::Twist cmd_vel)
     command->set_veltangent(0);
     command->set_velnormal(0);  // No normal velocity
     command->set_velangular(0);
-    command->set_kickspeedx(kick);
-    command->set_kickspeedz(0); // No chipper
-    command->set_spinner(dribble ? 80 : 0);
+    //command->set_kickspeedx(kick);
+    //command->set_kickspeedz(0); // No chipper
+    //command->set_spinner(dribble ? 80 : 0);
 
     //Send packet
     struct sockaddr_in myaddr;

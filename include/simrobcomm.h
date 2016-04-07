@@ -1,7 +1,7 @@
 #ifndef SIMROBCOMM_H
 #define SIMROBCOMM_H
-#include <QtNetwork/QUdpSocket>
-#include "model/robot.h"
+//#include <QtNetwork/QUdpSocket>
+#include "robot.h"
 #include "robcomm.h"
 
 //! @brief Percentage of stored robot velocity sent to simulator
