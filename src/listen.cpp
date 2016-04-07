@@ -128,8 +128,8 @@ void chatterCallback(const geometry_msgs::Twist cmd_vel)
     grSim_Robot_Command* command = packet.mutable_commands()->add_robot_commands();
 
     //Retrive robot information
-   /* int id = 1;
-    LF = robot->getLF();
+    int id = 1;
+    /*LF = robot->getLF();
     RF = robot->getRF();
     LB = robot->getLB();
     RB = robot->getRB();
@@ -137,7 +137,7 @@ void chatterCallback(const geometry_msgs::Twist cmd_vel)
     bool  dribble = false;*/
 
     // Fill in simulator packet
-    command->set_id(1);
+    command->set_id(id);
     command->set_wheelsspeed(true);
     command->set_wheel1(-LF);    //Left Forward
     command->set_wheel2(-LB);    //Left Backward
