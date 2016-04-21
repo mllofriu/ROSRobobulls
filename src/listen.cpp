@@ -45,13 +45,135 @@
 #include <iomanip>
 #include <string>
 #include "visioncomm.h"
+#include "serialib.h"
 //#include"omni4_velcalculator.h"
 
 using std::abs;
 
+static float k = 0.4;
+struct packet_t {
+    int8_t tilde;         //!<"Tilde", '~ 'for NXT, 255 for Arduino
+    int8_t id;            //!<Robot ID
+    int8_t left_front;    //!<LF wheel velocity
+    int8_t left_back;     //!<LB wheel velocity
+    int8_t right_front;   //!<RF wheel velocity
+    int8_t right_back;    //!<RB wheel velocity
+    int8_t kick;          //!<Kick? 1/0 for Arduino, 'k'/0 for NXT
+    int8_t chip_power;    //!<Chip kick power
+    int8_t dribble_power; //!<Dribbler power
+    int8_t dollar;        //!<Dollar", '$' for NXT, 255 for Arduino
+};
+
+serialib Xbee;            //!<seriallib Interface to /dev/xbee
+
+
 /**
  * This tutorial demonstrates simple receipt of messages over the ROS system.
  */
+
+void sendToSimulator(double RF, double RB, double LF, double LB)
+{
+    // Send Message
+    grSim_Packet packet;
+    packet.mutable_commands()->set_isteamyellow( (TEAM != TEAM_YELLOW) );
+    packet.mutable_commands()->set_timestamp(0.0);
+    grSim_Robot_Command* command = packet.mutable_commands()->add_robot_commands();
+
+    //Retrive robot information
+    int id = 3;
+    /*LF = robot->getLF();
+    RF = robot->getRF();
+    LB = robot->getLB();
+    RB = robot->getRB();
+    float kick = 0;
+    bool  dribble = false;*/
+
+    // Fill in simulator packet
+    command->set_id(id);
+    command->set_wheelsspeed(true);
+    command->set_wheel1(-LF);    //Left Forward
+    command->set_wheel2(-LB);    //Left Backward
+    command->set_wheel3( RB);    //Right Backward
+    command->set_wheel4( RF);    //Right Forward
+    command->set_veltangent(0);
+    command->set_velnormal(0);  // No normal velocity
+    command->set_velangular(0);
+    command->set_kickspeedx(0);
+    command->set_kickspeedz(0); // No chipper
+    command->set_spinner(0);
+
+    //Send packet
+    struct sockaddr_in myaddr;
+    int sock;
+
+    memset(&myaddr, 0, sizeof(myaddr));
+    myaddr.sin_family=AF_INET;
+    myaddr.sin_addr.s_addr=htonl(INADDR_ANY);
+    myaddr.sin_port=htons(0);
+
+    if((sock=socket(AF_INET, SOCK_DGRAM, 0))<0) {
+          perror("Failed to create socket");
+          exit(EXIT_FAILURE);
+       }
+
+    if(bind(sock,( struct sockaddr *) &myaddr, sizeof(myaddr))<0) {
+          perror("bind failed");
+          exit(EXIT_FAILURE);
+       }
+    inet_pton(AF_INET, "131.247.14.100",&myaddr.sin_addr.s_addr);
+    myaddr.sin_port=htons(20011);
+
+    // Build udp packet from grSim packet
+    char buf[packet.ByteSize()];
+    packet.SerializeToArray(buf, packet.ByteSize());
+
+    if(sendto(sock, buf, packet.ByteSize(), 0, (struct sockaddr *)&myaddr, sizeof(myaddr))!=packet.ByteSize()) {
+      perror("Mismatch in number of bytes sent");
+      exit(EXIT_FAILURE);
+   }
+}
+
+void sendToRobot(double RF, double RB, double LF, double LB)
+{
+    // Create array of packets
+    packet_t teamPacketBuf[1];
+
+    // Initialize packet to zeros
+    std::memset(&teamPacketBuf, 0, sizeof(packet_t));
+    //int i = 0;
+    // For each robot...
+   // for( i = 0; i != 1/*robots.size()*/; ++i)
+    //{
+        // Load information into the packet
+        packet_t* packet = &teamPacketBuf[0];
+        //Robot* rob =  robots[i];
+        //packet->id = rob->getID();
+        packet->id = 3;
+
+            //Packet format with Arduino: 250 and 255 with k+100
+            packet->tilde = char(250);
+            packet->dollar = char(255);
+
+            packet->left_front  = (LF, -100, 100)*k + 100;
+            packet->left_back   = (LB, -100, 100)*k + 100;
+            packet->right_front = (RF, -100, 100)*k + 100;
+            packet->right_back  = (RB, -100, 100)*k + 100;
+
+
+
+        //Kick, dribble, and Chip power (no chipper, always 0)
+        packet->kick = 0;//rob->getKick() > 0 ? 'k' : 0;
+        packet->dribble_power = 0;//rob->getDribble() > 0 ? 'd' : 0;
+        packet->chip_power = 0;
+
+        //Reset kick and dribble status in robot
+        //rob->setKick(0);
+        //rob->setDrible(0);
+   // }
+
+    // Send Array of packets
+    Xbee.Write((char*)&teamPacketBuf, sizeof(packet_t));
+}
 
 void chatterCallback(const geometry_msgs::Twist cmd_vel)
 {
@@ -110,95 +232,30 @@ void chatterCallback(const geometry_msgs::Twist cmd_vel)
         RB=(max_mtr_spd/abs(RB))*RB;
     }
 
-    //Create and return result container
-   /* fourWheelVels vels;
-    vels.LB = LB;
-    vels.LF = LF;
-    vels.RB = RB;
-    vels.RF = RF;
+int Real = 1;
+  if(Real==0)
+  {
+      sendToSimulator(RF, RB, LF, LB);
+  }
+  else
+  {
+      sendToRobot(RF, RB, LF, LB);
+  }
 
-    return vels;*/
-
-
-
-    // Send Message
-    grSim_Packet packet;
-    packet.mutable_commands()->set_isteamyellow( (TEAM != TEAM_YELLOW) );
-    packet.mutable_commands()->set_timestamp(0.0);
-    grSim_Robot_Command* command = packet.mutable_commands()->add_robot_commands();
-
-    //Retrive robot information
-    int id = 1;
-    /*LF = robot->getLF();
-    RF = robot->getRF();
-    LB = robot->getLB();
-    RB = robot->getRB();
-    float kick = 0;
-    bool  dribble = false;*/
-
-    // Fill in simulator packet
-    command->set_id(id);
-    command->set_wheelsspeed(true);
-    command->set_wheel1(-LF);    //Left Forward
-    command->set_wheel2(-LB);    //Left Backward
-    command->set_wheel3( RB);    //Right Backward
-    command->set_wheel4( RF);    //Right Forward
-    command->set_veltangent(0);
-    command->set_velnormal(0);  // No normal velocity
-    command->set_velangular(0);
-    //command->set_kickspeedx(kick);
-    //command->set_kickspeedz(0); // No chipper
-    //command->set_spinner(dribble ? 80 : 0);
-
-    //Send packet
-    struct sockaddr_in myaddr;
-    int sock;
-
-    memset(&myaddr, 0, sizeof(myaddr));
-    myaddr.sin_family=AF_INET;
-    myaddr.sin_addr.s_addr=htonl(INADDR_ANY);
-    myaddr.sin_port=htons(0);
-
-    if((sock=socket(AF_INET, SOCK_DGRAM, 0))<0) {
-          perror("Failed to create socket");
-          exit(EXIT_FAILURE);
-       }
-
-    if(bind(sock,( struct sockaddr *) &myaddr, sizeof(myaddr))<0) {
-          perror("bind failed");
-          exit(EXIT_FAILURE);
-       }
-    inet_pton(AF_INET, "131.247.14.100",&myaddr.sin_addr.s_addr);
-    myaddr.sin_port=htons(20011);
-
-    // Build udp packet from grSim packet
-    char buf[packet.ByteSize()];
-    packet.SerializeToArray(buf, packet.ByteSize());
-
-    if(sendto(sock, buf, packet.ByteSize(), 0, (struct sockaddr *)&myaddr, sizeof(myaddr))!=packet.ByteSize()) {
-          perror("Mismatch in number of bytes sent");
-          exit(EXIT_FAILURE);
-       }
-    /*QByteArray dgram;
-    dgram.resize(packet.ByteSize());
-    packet.SerializeToArray(dgram.data(), dgram.size());
-    udpsocket.writeDatagram(dgram, _addr, _port);
-
-    QByteArray dgram;
-    dgram.resize(packet.ByteSize());
-    packet.SerializeToArray(dgram.data(), dgram.size());
-    int s = socket(dgram,_addr,_port);*/
 }
-
-
-
-
 
 int main(int argc, char **argv)
 {
 
   ros::init(argc, argv, "listen");
   ros::NodeHandle n;
+
+  if (Xbee.Open("/dev/xbee", 57600) != 1) {
+      printf ("Error while opening port. Permission problem ?\n");
+      exit(1);
+  } else {
+      printf ("Serial port opened successfully !\n");
+  }
 
   ros::Subscriber sub = n.subscribe("cmd_vel", 1000, chatterCallback);
   //geometry_msgs::Twist t;
@@ -215,6 +272,9 @@ int main(int argc, char **argv)
 // %Tag(SPIN)%
   ros::spin();
 // %EndTag(SPIN)%
+sendToRobot(0, 0, 0, 0);
+sendToSimulator(0, 0, 0, 0);
+Xbee.Close();
 
   return 0;
 }

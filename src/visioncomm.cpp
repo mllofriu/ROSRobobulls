@@ -196,7 +196,7 @@ void VisionComm::recieveRobotTeam(const SSL_DetectionFrame& frame, int whichTeam
     {
         //        if(isGoodDetection(robot, frame, CONF_THRESHOLD_BOTS, fourCameraMode)) {
         int robotID = (*it).robot_id();//robot.robot_id changed from ()->robot_blue.robotID AE
-        if(robotID == 1) {
+        if(robotID == 3) {
             updateInfo(*it, whichTeam);
         }
 

@@ -146,7 +146,7 @@ include_directories(
 
 add_executable(position src/main.cpp src/visioncomm.cpp src/utilities/point.cpp src/robocup_ssl_client.cpp src/netraw.cpp src/messages_robocup_ssl_detection.pb.cc src/messages_robocup_ssl_geometry.pb.cc src/messages_robocup_ssl_refbox_log.pb.cc src/messages_robocup_ssl_wrapper.pb.cc)
 target_link_libraries(position ${catkin_LIBRARIES} ${protobuf_LIBRARIES} /usr/lib/x86_64-linux-gnu/libprotobuf.so)
-add_executable(listen src/listen.cpp src/messages_robocup_ssl_geometry.pb.cc src/grSim_Packet.pb.cc src/grSim_Commands.pb.cc src/grSim_Replacement.pb.cc)
+add_executable(listen src/listen.cpp src/serialib.cpp src/messages_robocup_ssl_geometry.pb.cc src/grSim_Packet.pb.cc src/grSim_Commands.pb.cc src/grSim_Replacement.pb.cc)
 target_link_libraries(listen ${catkin_LIBRARIES} ${protobuf_LIBRARIES} /usr/lib/x86_64-linux-gnu/libprotobuf.so)
 
 
