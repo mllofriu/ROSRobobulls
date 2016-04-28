@@ -14,7 +14,7 @@
 #include "geometry_msgs/Twist.h"
 
 using namespace std;
-int robo;
+int robo;// Robot ID when using parameters
 
 VisionComm::VisionComm(ros::Publisher pub)
 {
