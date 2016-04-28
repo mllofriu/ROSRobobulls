@@ -46,7 +46,6 @@
 #include <string>
 #include "visioncomm.h"
 #include "serialib.h"
-//#include"omni4_velcalculator.h"
 
 using std::abs;
 
@@ -81,12 +80,6 @@ void sendToSimulator(double RF, double RB, double LF, double LB)
 
     //Retrive robot information
     int id = 3;
-    /*LF = robot->getLF();
-    RF = robot->getRF();
-    LB = robot->getLB();
-    RB = robot->getRB();
-    float kick = 0;
-    bool  dribble = false;*/
 
     // Fill in simulator packet
     command->set_id(id);
@@ -97,10 +90,10 @@ void sendToSimulator(double RF, double RB, double LF, double LB)
     command->set_wheel4( RF);    //Right Forward
     command->set_veltangent(0);
     command->set_velnormal(0);  // No normal velocity
-    command->set_velangular(0);
-    command->set_kickspeedx(0);
+    command->set_velangular(0); // Not in use
+    command->set_kickspeedx(0); // not in use
     command->set_kickspeedz(0); // No chipper
-    command->set_spinner(0);
+    command->set_spinner(0); //not in use
 
     //Send packet
     struct sockaddr_in myaddr;
@@ -112,25 +105,25 @@ void sendToSimulator(double RF, double RB, double LF, double LB)
     myaddr.sin_port=htons(0);
 
     if((sock=socket(AF_INET, SOCK_DGRAM, 0))<0) {
-          perror("Failed to create socket");
-          exit(EXIT_FAILURE);
-       }
+        perror("Failed to create socket");
+        exit(EXIT_FAILURE);
+    }
 
     if(bind(sock,( struct sockaddr *) &myaddr, sizeof(myaddr))<0) {
-          perror("bind failed");
-          exit(EXIT_FAILURE);
-       }
+        perror("bind failed");
+        exit(EXIT_FAILURE);
+    }
     inet_pton(AF_INET, "131.247.14.100",&myaddr.sin_addr.s_addr);
     myaddr.sin_port=htons(20011);
 
     // Build udp packet from grSim packet
     char buf[packet.ByteSize()];
     packet.SerializeToArray(buf, packet.ByteSize());
-
+    //this if statement compiles but it can be modified further
     if(sendto(sock, buf, packet.ByteSize(), 0, (struct sockaddr *)&myaddr, sizeof(myaddr))!=packet.ByteSize()) {
-      perror("Mismatch in number of bytes sent");
-      exit(EXIT_FAILURE);
-   }
+        perror("Mismatch in number of bytes sent");
+        exit(EXIT_FAILURE);// end of if statement
+    }
 }
 
 void sendToRobot(double RF, double RB, double LF, double LB)
@@ -140,36 +133,26 @@ void sendToRobot(double RF, double RB, double LF, double LB)
 
     // Initialize packet to zeros
     std::memset(&teamPacketBuf, 0, sizeof(packet_t));
-    //int i = 0;
-    // For each robot...
-   // for( i = 0; i != 1/*robots.size()*/; ++i)
-    //{
-        // Load information into the packet
-        packet_t* packet = &teamPacketBuf[0];
-        //Robot* rob =  robots[i];
-        //packet->id = rob->getID();
-        packet->id = 3;
 
-            //Packet format with Arduino: 250 and 255 with k+100
-            packet->tilde = char(250);
-            packet->dollar = char(255);
+    // Load information into the packet
+    packet_t* packet = &teamPacketBuf[0];
+    packet->id = 4;
 
-            packet->left_front  = (LF, -100, 100)*k + 100;
-            packet->left_back   = (LB, -100, 100)*k + 100;
-            packet->right_front = (RF, -100, 100)*k + 100;
-            packet->right_back  = (RB, -100, 100)*k + 100;
+    //Packet format with Arduino: 250 and 255 with k+100
+    packet->tilde = char(250);
+    packet->dollar = char(255);
+    //Uses Min and Max values to set limits to robot
+    packet->left_front  = std::min(100.0, std::max(LF, -100.0))*k + 100;
+    packet->left_back   = std::min(100.0, std::max(LB, -100.0))*k + 100;
+    packet->right_front = std::min(100.0, std::max(RF, -100.0))*k + 100;
+    packet->right_back  = std::min(100.0, std::max(RB, -100.0))*k + 100;
 
 
 
-        //Kick, dribble, and Chip power (no chipper, always 0)
-        packet->kick = 0;//rob->getKick() > 0 ? 'k' : 0;
-        packet->dribble_power = 0;//rob->getDribble() > 0 ? 'd' : 0;
-        packet->chip_power = 0;
-
-        //Reset kick and dribble status in robot
-        //rob->setKick(0);
-        //rob->setDrible(0);
-   // }
+    //Kick, dribble, and Chip power (no chipper, always 0)
+    packet->kick = 0;//not in use
+    packet->dribble_power = 0;// not in use
+    packet->chip_power = 0;
 
     // Send Array of packets
     Xbee.Write((char*)&teamPacketBuf, sizeof(packet_t));
@@ -191,10 +174,10 @@ void chatterCallback(const geometry_msgs::Twist cmd_vel)
     double trans_offset = 0.0149;
 #endif
     const double wheel_radius = 27;
-    double theta_vel = cmd_vel.angular.z/*theta_prop_mult * angle_error + theta_int_mult  * angle_error_integral*/;
+    double theta_vel = cmd_vel.angular.z;
     // Compute LF RF LB RB
-    double y_vel_robot = cmd_vel.linear.x/*cos(theta_current)*x_vel+sin(theta_current)*y_vel*/;
-    double x_vel_robot = cmd_vel.linear.y/*sin(theta_current)*x_vel-cos(theta_current)*y_vel*/;
+    double y_vel_robot = cmd_vel.linear.x;
+    double x_vel_robot = cmd_vel.linear.y;
     double vel_robot = sqrt(x_vel_robot*x_vel_robot + y_vel_robot * y_vel_robot);
 
     double RF =  (-sin(RF_offset) * x_vel_robot + cos(RF_offset)*y_vel_robot - trans_offset*vel_robot*cos(RF_offset) + wheel_radius*theta_vel);
@@ -232,50 +215,45 @@ void chatterCallback(const geometry_msgs::Twist cmd_vel)
         RB=(max_mtr_spd/abs(RB))*RB;
     }
 
-int Real = 1;
-  if(Real==0)
-  {
-      sendToSimulator(RF, RB, LF, LB);
-  }
-  else
-  {
-      sendToRobot(RF, RB, LF, LB);
-  }
+    int Real = 1;
+    if(Real==0)
+    {
+        sendToSimulator(RF, RB, LF, LB);
+    }
+    else
+    {
+        sendToRobot(RF, RB, LF, LB);
+    }
 
 }
 
 int main(int argc, char **argv)
 {
 
-  ros::init(argc, argv, "listen");
-  ros::NodeHandle n;
+    ros::init(argc, argv, "listen");
+    ros::NodeHandle n;
 
-  if (Xbee.Open("/dev/xbee", 57600) != 1) {
-      printf ("Error while opening port. Permission problem ?\n");
-      exit(1);
-  } else {
-      printf ("Serial port opened successfully !\n");
-  }
+    if (Xbee.Open("/dev/xbee", 57600) != 1) {
+        printf ("Error while opening port. Permission problem ?\n");
+        exit(1);
+    } else {
+        printf ("Serial port opened successfully !\n");
+    }
 
-  ros::Subscriber sub = n.subscribe("cmd_vel", 1000, chatterCallback);
-  //geometry_msgs::Twist t;
-  //geometry_msgs::Vector3 v;
+    ros::Subscriber sub = n.subscribe("cmd_vel", 1000, chatterCallback);
 
-
-
-
-  /**
+    /**
    * ros::spin() will enter a loop, pumping callbacks.  With this version, all
    * callbacks will be called from within this thread (the main one).  ros::spin()
    * will exit when Ctrl-C is pressed, or the node is shutdown by the master.
    */
-// %Tag(SPIN)%
-  ros::spin();
-// %EndTag(SPIN)%
-sendToRobot(0, 0, 0, 0);
-sendToSimulator(0, 0, 0, 0);
-Xbee.Close();
+    // %Tag(SPIN)%
+    ros::spin();
+    // %EndTag(SPIN)%
+    sendToRobot(0, 0, 0, 0);
+    sendToSimulator(0, 0, 0, 0);
+    Xbee.Close();
 
-  return 0;
+    return 0;
 }
 // %EndTag(FULLTEXT)%

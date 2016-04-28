@@ -66,55 +66,22 @@ void VisionComm::updateInfo(const SSL_DetectionRobot& robot, int detectedTeamCol
 
 
 
-            geometry_msgs::Pose msg;
-            geometry_msgs::Point p;
-            geometry_msgs::Twist v;
-            p.x = robot.x();
-            p.y = robot.y();
+        geometry_msgs::Pose msg;
+        geometry_msgs::Point p;
+        geometry_msgs::Twist v;
+        p.x = robot.x();
+        p.y = robot.y();
 
-            msg.position = p;
+        msg.position = p;
 
-            msg.orientation = tf::createQuaternionMsgFromYaw(rotationReading);
+        msg.orientation = tf::createQuaternionMsgFromYaw(rotationReading);
 
-            //ROS_INFO("%s", msg);
-            positionpub.publish(msg);
-            //ros::spinOnce();
-            //loop_rate.sleep();
-            //++count;
+        //ROS_INFO("%s", msg);
+        positionpub.publish(msg);
 
-       // std::cout<<"Robot 1 PositionositionReading(robot.x(),robot.y X ="<<robot.x()<< std::endl;
-       // std::cout<<"Robot 1 Position Y ="<<robot.y()<< std::endl;
     }
 }
 
-
-/*template<typename Detection>
-static bool isGoodDetection
-    (const Detection& detection, const SSL_DetectionFrame& frame, float confidence, bool fourCameraMode)
-{
-    bool isGoodConf = detection.confidence() > confidence;
-    bool isGoodSide = false;
-
-    //For correct side, we look at the X and Y readings and the camera that
-    //reported them. This is to help prevent duplicated readings on the edges
-    float x = detection.x();
-    float y = detection.y();
-    float cam = frame.camera_id();
-    if(!fourCameraMode) {
-        isGoodSide =
-        (x >= 0 && cam == 0) ||
-        (x  < 0 && cam == 1);
-    } else {
-        isGoodSide =
-        (x >= 0 && y >= 0 && cam == 0) ||
-        (x  < 0 && y >= 0 && cam == 1) ||
-        (x  < 0 && y  < 0 && cam == 2) ||
-        (x >= 0 && y  < 0 && cap(robot.x(),robot.y())m == 3);
-    }
-    isGoodSide |= SIMULATED;    //Simulated overrides anything
-
-    return isGoodConf && isGoodSide;
-}*/
 
 //Predicate for max_element, determining which ball is best on confidence
 static bool ballCompareFn(const SSL_DetectionBall&  a, const SSL_DetectionBall&  b) {
@@ -129,61 +96,7 @@ static bool ballCompareFn(const SSL_DetectionBall&  a, const SSL_DetectionBall& 
  * as this best one if that confidence is > CONF_THRESHOLD_BALL,
  * and it is detected on the correct side.
  */
-/*void VisionComm::recieveBall(const SSL_DetectionFrame& frame)
-{
-    static Point noiseCenterPoint;
-    static int seenOutsideRadiusCount = 0;
-    static int seenStoppedCount = 0;
-    static Point lastDetection;
 
-    //Stop if no balls present
-    if(frame.balls_size() <= 0)
-        return;
-
-    //Choose the best ball based on confidence
-    auto bestDetect = std::max_element(frame.balls().begin(), frame.balls().end(), ballCompareFn);
-
-    //If it is still a good detection...
-    if(isGoodDetection(*bestDetect, frame, CONF_THRESHOLD_BALL, fourCameraMode))
-    {
-        Point newDetection = Point(bestDetect->x(), bestDetect->y());
-    #if SIDE == SIDE_POSITIVE
-        newDetection *= -1;
-    #endif
-
-        // If the ball is detected outside the noise radius more than 5 times
-        // it is considered to be moving and its position will be updated
-        if(gameModel->ballStopped)
-        {
-            gameModel->setBallPoint(gameModel->getBallPoint());
-
-            if(Measurments::distance(newDetection, noiseCenterPoint) > NOISE_RADIUS)
-                ++seenOutsideRadiusCount;
-            if(seenOutsideRadiusCount > 2)
-            {
-                gameModel->ballStopped = false;
-                seenOutsideRadiusCount = 0;
-            }
-        }
-        // If the ball is detected close (distance < 1) to its last point
-        // 4 times it is considered stopped it's position will not be updated
-        else
-        {
-            gameModel->setBallPoint(newDetection);
-
-            if(Measurments::distance(newDetection,lastDetection) < 1)
-                ++seenStoppedCount;
-            if(seenStoppedCount >= 4)
-            {
-                gameModel->ballStopped = true;
-                noiseCenterPoint = newDetection;
-                seenStoppedCount = 0;
-            }
-
-            lastDetection = newDetection;
-        }
-    }
-}
 
 /* Used to parse and recieve a generic Robot team and update GameModel with
  * the information, if we're confident on the Robot detection
@@ -238,8 +151,6 @@ bool VisionComm::receive()
      * ghost robots from appearing over time */
     if(++resetFrames > 50) {
         resetFrames = 0;
-        //for(int& readi~/.bashrc ng : blue_rob_readings) reading = 0;
-        // for(int& reading : yell_rob_readings) reading = 0;
     }
 
     return true;
