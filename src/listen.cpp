@@ -65,12 +65,14 @@ struct packet_t {
 
 serialib Xbee;            //!<seriallib Interface to /dev/xbee
 
+bool simulated;
+int robotID;
 
 /**
  * This tutorial demonstrates simple receipt of messages over the ROS system.
  */
 
-void sendToSimulator(double RF, double RB, double LF, double LB)
+void sendToSimulator(double RF, double RB, double LF, double LB, int robotID)
 {
     // Send Message
     grSim_Packet packet;
@@ -79,7 +81,7 @@ void sendToSimulator(double RF, double RB, double LF, double LB)
     grSim_Robot_Command* command = packet.mutable_commands()->add_robot_commands();
 
     //Retrive robot information
-    int id = 3;
+    int id = robotID;
 
     // Fill in simulator packet
     command->set_id(id);
@@ -126,7 +128,7 @@ void sendToSimulator(double RF, double RB, double LF, double LB)
     }
 }
 
-void sendToRobot(double RF, double RB, double LF, double LB)
+void sendToRobot(double RF, double RB, double LF, double LB, int robotID)
 {
     // Create array of packets
     packet_t teamPacketBuf[1];
@@ -136,7 +138,7 @@ void sendToRobot(double RF, double RB, double LF, double LB)
 
     // Load information into the packet
     packet_t* packet = &teamPacketBuf[0];
-    packet->id = 4;
+    packet->id = robotID;
 
     //Packet format with Arduino: 250 and 255 with k+100
     packet->tilde = char(250);
@@ -160,19 +162,22 @@ void sendToRobot(double RF, double RB, double LF, double LB)
 
 void chatterCallback(const geometry_msgs::Twist cmd_vel)
 {
-    ROS_INFO("Received values: [%f, %f, %f]", cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z);
+    ROS_INFO("Received values: [%f, %f, %f], to Robot ID %i", cmd_vel.linear.x, cmd_vel.linear.y, cmd_vel.angular.z, robotID);
 
     double LF_offset = 144*M_PI/180; //135 Robot's x-Axis (right side) is zero
     double LB_offset = 224*M_PI/180; //225
     double RF_offset =  36*M_PI/180; //45
     double RB_offset = 316*M_PI/180; //315
+    ros::NodeHandle n("~");
+    n.param("robotID", robotID, 0);
+    n.param("simulated", simulated, true);
 
+    double trans_offset;
+    if (simulated)
+        trans_offset = 0;
+    else
+        trans_offset = 0.0149;
 
-#if SIMULATED
-    double trans_offset = 0;
-#else
-    double trans_offset = 0.0149;
-#endif
     const double wheel_radius = 27;
     double theta_vel = cmd_vel.angular.z;
     // Compute LF RF LB RB
@@ -215,14 +220,15 @@ void chatterCallback(const geometry_msgs::Twist cmd_vel)
         RB=(max_mtr_spd/abs(RB))*RB;
     }
     // If using Robot or simulator be sure to change the value from 1 or 0 . to specify which function to call
-    int Real = 1;
-    if(Real==0)
+
+
+    if(simulated)
     {
-        sendToSimulator(RF, RB, LF, LB);
+        sendToSimulator(RF, RB, LF, LB, robotID);
     }
     else
     {
-        sendToRobot(RF, RB, LF, LB);
+        sendToRobot(RF, RB, LF, LB, robotID);
     }
 
 }
@@ -250,8 +256,11 @@ int main(int argc, char **argv)
     // %Tag(SPIN)%
     ros::spin();
     // %EndTag(SPIN)%
-    sendToRobot(0, 0, 0, 0);
-    sendToSimulator(0, 0, 0, 0);
+    if(simulated)
+    {sendToSimulator(0, 0, 0, 0, robotID);}
+    else
+    {sendToRobot(0, 0, 0, 0, robotID);}
+
     Xbee.Close();
 
     return 0;

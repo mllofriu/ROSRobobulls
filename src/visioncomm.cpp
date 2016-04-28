@@ -14,6 +14,7 @@
 #include "geometry_msgs/Twist.h"
 
 using namespace std;
+int robo;
 
 VisionComm::VisionComm(ros::Publisher pub)
 {
@@ -107,9 +108,11 @@ void VisionComm::recieveRobotTeam(const SSL_DetectionFrame& frame, int whichTeam
     //for(const SSL_DetectionRobot& robot : frame.robots_blue().iterator)//*currentTeamDection changed to robot_blue AE
     for(google::protobuf::RepeatedPtrField<SSL_DetectionRobot>::const_iterator it= frame.robots_blue().begin(); it != frame.robots_blue().end(); it++)
     {
+        ros::NodeHandle n("~");
+        n.param("robotID", robo, 0);
         //        if(isGoodDetection(robot, frame, CONF_THRESHOLD_BOTS, fourCameraMode)) {
         int robotID = (*it).robot_id();//robot.robot_id changed from ()->robot_blue.robotID AE
-        if(robotID == 3) {
+        if(robotID == robo) {
             updateInfo(*it, whichTeam);
         }
 
