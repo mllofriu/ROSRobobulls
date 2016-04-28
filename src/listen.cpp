@@ -214,7 +214,7 @@ void chatterCallback(const geometry_msgs::Twist cmd_vel)
         RF=(max_mtr_spd/abs(RB))*RF;
         RB=(max_mtr_spd/abs(RB))*RB;
     }
-
+    // If using Robot or simulator be sure to change the value from 1 or 0 . to specify which function to call
     int Real = 1;
     if(Real==0)
     {
