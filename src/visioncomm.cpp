@@ -7,11 +7,13 @@
 #include "utilities/point.h"
 #include "config/team.h"
 #include "ros/ros.h"
+#include <tf/transform_broadcaster.h>
 #include "geometry_msgs/Pose.h"
 //#include "std_msg/String.h"
 #include <sstream>
 #include "tf/transform_datatypes.h"
 #include "geometry_msgs/Twist.h"
+
 
 using namespace std;
 int robo;// Robot ID when using parameters
@@ -72,13 +74,23 @@ void VisionComm::updateInfo(const SSL_DetectionRobot& robot, int detectedTeamCol
         geometry_msgs::Twist v;
         p.x = robot.x();
         p.y = robot.y();
-
+        p.z = robot.orientation();
         msg.position = p;
 
         msg.orientation = tf::createQuaternionMsgFromYaw(rotationReading);
 
         //ROS_INFO("%s", msg);
         positionpub.publish(msg);
+
+          static tf::TransformBroadcaster br;
+          tf::Transform transform;
+          transform.setOrigin( tf::Vector3(p.x, p.y, 0.0) );
+          tf::Quaternion q;
+          q.setRPY(0, 0,p.z);
+          transform.setRotation(q);
+          //br.sendTransform(tf::StampedTransform(transform, ros::Time::now(), "position",positionpub));
+
+
 
     }
 }

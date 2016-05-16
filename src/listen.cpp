@@ -49,7 +49,7 @@
 
 using std::abs;
 
-static float k = 0.4;
+static float k = 20.0;
 struct packet_t {
     int8_t tilde;         //!<"Tilde", '~ 'for NXT, 255 for Arduino
     int8_t id;            //!<Robot ID
@@ -259,7 +259,8 @@ int main(int argc, char **argv)
     if(simulated)
     {sendToSimulator(0, 0, 0, 0, robotID);}
     else
-    {sendToRobot(0, 0, 0, 0, robotID);}
+    {sendToRobot(0, 0, 0, 0, robotID);
+        sleep(5);}
 
     Xbee.Close();
 
